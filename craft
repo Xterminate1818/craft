@@ -1,4 +1,4 @@
-#!bin/python
+#!/bin/python
 import os
 import sys
 from configparser import ConfigParser
@@ -17,22 +17,20 @@ DEFAULT_CONFIG = {
     "bin_path": "./bin/",
 }
 
-
-class LOG_LEVEL:
-    INFO = 0
-    WARN = 1
-    FATAL = 2
+LOG_INFO = 0
+LOG_WARN = 1
+LOG_FATAL = 2
 
 
-def log(_msg: str, _level: int = LOG_LEVEL.INFO) -> None:
+def log(_msg: str, _level: int = LOG_INFO) -> None:
     """
     Print message to output with [PYMAKE] prefix, end with ANSI reset code.
     """
-    if _level == LOG_LEVEL.INFO:
+    if _level == 0:
         pass  # default output
-    if _level == LOG_LEVEL.WARN:
+    if _level == 1:
         print("\u001b[33m", end="")  # orange output
-    if _level == LOG_LEVEL.FATAL:
+    if _level == 2:
         print("\u001b[31m", end="")  # red output
     print("[PYMAKE] " + _msg + "\u001b[0m")
 
@@ -42,7 +40,8 @@ def fail_if(_exit: bool, _msg: str) -> None:
     Do sys.exit() if _exit is true
     """
     if _exit is True:
-        log(_msg, _level=LOG_LEVEL.FATAL)
+        log(_msg, _level=LOG_FATAL)
+        log("Exiting...", _level=LOG_FATAL)
         sys.exit()
 
 
@@ -84,6 +83,7 @@ def get_config() -> dict[str, str]:
     """
     if len(sys.argv) <= 1:
         log("Using config profile: DEFAULT")
+        validate_config(DEFAULT_CONFIG)
         return DEFAULT_CONFIG
     # Command line argument provided
     argv1 = sys.argv[1]
@@ -99,6 +99,19 @@ def get_config() -> dict[str, str]:
     return _ret
 
 
+def write_config() -> None:
+    """
+    Write the default config file to the directory
+    """
+    fail_if(os.path.exists(CONFIG_FILE), "Config file already exists!")
+    log("Writing default config file")
+    with open(CONFIG_FILE, "w", encoding="utf-8") as config:
+        keys = list(DEFAULT_CONFIG.keys())
+        vals = list(DEFAULT_CONFIG.keys())
+        for i in range(len(keys)):
+            config.write(f"{keys[i]} = {vals[i]}")
+
+
 def shell(_cmd: str, _silent: bool = False) -> int:
     """
     Run _cmd as a shell command, disable echo with _silent=True
@@ -109,6 +122,10 @@ def shell(_cmd: str, _silent: bool = False) -> int:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "-write":
+        write_config()
+        sys.exit()
+
     cfg = get_config()
 
     # Cleaning step - Don't care if this errors
