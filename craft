@@ -5,6 +5,7 @@ from configparser import ConfigParser
 from glob import glob
 from subprocess import call
 
+CONFIG_FILES = ["recipe.ini", "recipe"]
 CONFIG_FILE = "recipe.ini"
 
 DEFAULT_CONFIG = {
@@ -32,7 +33,7 @@ def log(_msg: str, _level: int = LOG_INFO) -> None:
         print("\u001b[33m", end="")  # orange output
     if _level == 2:
         print("\u001b[31m", end="")  # red output
-    print("[PYMAKE] " + _msg + "\u001b[0m")
+    print("[CRAFT] " + _msg + "\u001b[0m")
 
 
 def fail_if(_exit: bool, _msg: str) -> None:
@@ -88,8 +89,14 @@ def get_config() -> dict[str, str]:
     # Command line argument provided
     argv1 = sys.argv[1]
     ini_file = ConfigParser()
-    found = ini_file.read(CONFIG_FILE)
-    fail_if(len(found) == 0, f"Cannot find config file '{CONFIG_FILE}'!")
+    config_exists = False
+    for c in CONFIG_FILES:
+        if os.path.exists(c):
+            config_exists = True
+            ini_file.read(c)
+            log("Local config file found")
+            break
+    fail_if(not config_exists, "Profile given but no recipe found!")
     fail_if(
         not ini_file.has_section(
             argv1), f"Cannot find profile {argv1} in config file!"
