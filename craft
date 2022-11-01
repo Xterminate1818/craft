@@ -1,9 +1,19 @@
-#!/bin/python
+#!/usr/bin/python
 import os
 import sys
 from configparser import ConfigParser
 from glob import glob
 from subprocess import call
+
+# Command line arg handling
+argv = sys.argv
+flags = []
+inputs = []
+for v in argv:
+    if v[0] == "-":
+        flags.append(v)
+    else:
+        inputs.append(v)
 
 CONFIG_FILES = ["recipe.ini", "recipe"]
 CONFIG_FILE = "recipe.ini"
@@ -82,12 +92,12 @@ def get_config() -> dict[str, str]:
     Return a dict with the selected config,
     or the default config if none is provided
     """
-    if len(sys.argv) <= 1:
+    if len(argv) <= 1:
         log("Using config profile: DEFAULT")
         validate_config(DEFAULT_CONFIG)
         return DEFAULT_CONFIG
     # Command line argument provided
-    argv1 = sys.argv[1]
+    argv1 = argv[1]
     ini_file = ConfigParser()
     config_exists = False
     for c in CONFIG_FILES:
@@ -113,10 +123,11 @@ def write_config() -> None:
     fail_if(os.path.exists(CONFIG_FILE), "Config file already exists!")
     log("Writing default config file")
     with open(CONFIG_FILE, "w", encoding="utf-8") as config:
+        config.write("[DEFAULT]\n")
         keys = list(DEFAULT_CONFIG.keys())
         vals = list(DEFAULT_CONFIG.keys())
         for i in range(len(keys)):
-            config.write(f"{keys[i]} = {vals[i]}")
+            config.write(f"{keys[i]} = {vals[i]}\n")
 
 
 def shell(_cmd: str, _silent: bool = False) -> int:
@@ -129,9 +140,11 @@ def shell(_cmd: str, _silent: bool = False) -> int:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "-write":
+    if "-write" in argv:
         write_config()
         sys.exit()
+    if "-help" in argv: 
+        print_help()
 
     cfg = get_config()
 
